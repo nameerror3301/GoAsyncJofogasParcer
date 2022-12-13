@@ -80,17 +80,13 @@ func Run() {
 		Отправка данных в другой микросервис
 	*/
 	// fmt.Println(string(MarshalData(models.Elec)))
-	// fmt.Println()
-	// fmt.Println()
+
 	// fmt.Println(string(MarshalData(models.Сlothing)))
-	// fmt.Println()
-	// fmt.Println()
+
 	// fmt.Println(string(MarshalData(models.Hobby)))
-	// fmt.Println()
-	// fmt.Println()
+
 	// fmt.Println(string(MarshalData(models.BabyMoM)))
-	// fmt.Println()
-	// fmt.Println()
+
 	// fmt.Println(string(MarshalData(models.Sport)))
 
 	// fmt.Printf("{%s:%s}", Electronic, MarshalData(models.Elec))
