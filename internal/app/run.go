@@ -36,7 +36,7 @@ func Run() {
 	var wg sync.WaitGroup
 
 	// i == Кол-во страниц которые будут собраны
-	for i := 1; i <= 15; i++ {
+	for i := 1; i <= 1; i++ {
 		wg.Add(5)
 		var (
 			urlElectronic = fmt.Sprintf("https://www.jofogas.hu/magyarorszag/muszaki-cikkek-elektronika?o=%s", strconv.Itoa(i))
@@ -106,7 +106,7 @@ func Run() {
 func SendData(data []byte, category string, token string) {
 	conf := config.ReadConfig()
 
-	url := fmt.Sprintf("%sadd?category=%s&market=sbazar", conf.Data.OutStorageAddr, category)
+	url := fmt.Sprintf("%sadd?category=%s&market=jofogas", conf.Data.OutStorageAddr, category)
 
 	reader := bytes.NewReader(data)
 	req, err := http.NewRequest(http.MethodPost, url, reader)

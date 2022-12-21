@@ -15,6 +15,8 @@ import (
 
 type RequesLast struct {
 	User struct {
+		Name        string `json:"user_name"`
+		DateRegistr string `json:"user_date_reg"`
 		PhoneNumber string `json:"user_phone"`
 	} `json:"user_data"`
 	Products struct {
@@ -97,8 +99,12 @@ func FindProduct(url string, category string) error {
 func AppendData(data *[]RequesLast, phone string, respData ...string) {
 	*data = append(*data, RequesLast{
 		User: struct {
+			Name        string "json:\"user_name\""
+			DateRegistr string "json:\"user_date_reg\""
 			PhoneNumber string "json:\"user_phone\""
 		}{
+			Name:        "No Data",
+			DateRegistr: "No Data",
 			PhoneNumber: phone,
 		},
 		Products: struct {
