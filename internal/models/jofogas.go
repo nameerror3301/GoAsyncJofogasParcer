@@ -55,8 +55,6 @@ func FindProduct(url string, category string) error {
 		val, _ := s.Attr("href")
 		c := colly.NewCollector()
 
-		fmt.Println(val)
-
 		c.OnHTML("html", func(e *colly.HTMLElement) {
 			productID, _ := e.DOM.Find("vi-touch-stone[data-list-id]").Attr("data-list-id")
 			productName := e.DOM.Find("title").Text()
@@ -84,8 +82,6 @@ func FindProduct(url string, category string) error {
 			case "Sport":
 				AppendData(&Sport, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
 			}
-
-			logrus.Infof("%s [%s]\n", val, category)
 		})
 
 		c.OnError(func(r *colly.Response, err error) {

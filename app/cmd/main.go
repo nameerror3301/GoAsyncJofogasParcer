@@ -2,7 +2,6 @@ package main
 
 import (
 	"GoAsyncJofogasParcer/internal/app"
-	"fmt"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -16,8 +15,9 @@ func init() {
 }
 
 func main() {
-	t := time.Now()
-	app.Run()
-
-	fmt.Println(time.Since(t))
+	for {
+		timer1 := time.NewTimer(30 * time.Second)
+		<-timer1.C
+		app.Run()
+	}
 }
