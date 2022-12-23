@@ -122,7 +122,7 @@ func SendData(data []byte, category string, token string) {
 	res, err := client.Do(req)
 	if err != nil {
 		logrus.Error("Err send data - %s", err)
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 		SendData(MarshalData(models.Elec), category, conf.Data.JwtToken)
 	}
 	defer res.Body.Close()
