@@ -1,9 +1,12 @@
 package models
 
 import (
+	"GoAsyncJofogasParcer/internal/config"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -28,6 +31,14 @@ type RequesLast struct {
 	} `json:"product_data"`
 }
 
+type ProxyData struct {
+	Type string `json:"type"`
+	Data struct {
+		IP   string `json:"ip"`
+		Port string `json:"port"`
+	} `json:"data"`
+}
+
 type PhoneNum struct {
 	Phone string `json:"phone"`
 }
@@ -41,7 +52,8 @@ var (
 )
 
 func FindProduct(url string, category string) error {
-	data, err := Request(url)
+	conf := config.ReadConfig()
+	data, err := RequestFromParce(url, conf.Data.JwtToken)
 	if err != nil {
 		return err
 	}
@@ -56,6 +68,10 @@ func FindProduct(url string, category string) error {
 	doc.Find(".item-title a").Each(func(_ int, s *goquery.Selection) {
 		val, _ := s.Attr("href")
 		c := colly.NewCollector()
+
+		c.OnRequest(func(r *colly.Request) {
+			r.ProxyURL = FindProxy(conf.Data.JwtToken)
+		})
 
 		c.OnHTML("html", func(e *colly.HTMLElement) {
 			productID, _ := e.DOM.Find("vi-touch-stone[data-list-id]").Attr("data-list-id")
@@ -74,21 +90,16 @@ func FindProduct(url string, category string) error {
 
 			switch category {
 			case "Elec":
-				AppendData(&Elec, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Elec, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
 			case "Сlothing":
-				AppendData(&Сlothing, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Сlothing, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
 			case "Hobby":
-				AppendData(&Hobby, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Hobby, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
 			case "BabyMoM":
-				AppendData(&BabyMoM, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&BabyMoM, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
 			case "Sport":
-				AppendData(&Sport, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Sport, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
 			}
-		})
-
-		c.OnError(func(r *colly.Response, err error) {
-			logrus.Errorf("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
-			time.Sleep(time.Second * 5)
 		})
 
 		c.Visit(val)
@@ -123,44 +134,63 @@ func AppendData(data *[]RequesLast, phone string, respData ...string) {
 	})
 }
 
-func FindPhone(id string) string {
+func FindPhone(id string, proxy string) string {
 	var phone PhoneNum
 
-	url := fmt.Sprintf("https://apiv2.jofogas.hu/v2/items/getPhone?list_id=%s", id)
+	urlPhone := fmt.Sprintf("https://apiv2.jofogas.hu/v2/items/getPhone?list_id=%s", id)
 
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-
+	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
-		fmt.Println(err)
+		logrus.Errorf("Err parce proxy url - %s", err)
+	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(proxyUrl),
+		},
+	}
+
+	req, err := http.NewRequest(http.MethodGet, urlPhone, nil)
+	if err != nil {
+		logrus.Errorf("Err generate request from phone - %s", err)
 		return ""
 	}
 	req.Header.Add("api_key", "jofogas-web-eFRv9myucHjnXFbj")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		logrus.Errorf("Err request from finding phone - %s", err)
 		return ""
 	}
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logrus.Errorf("Err parce body - %s", err)
+		logrus.Errorf("Err parce phone body - %s", err)
 		return ""
 	}
 
 	if err = gojson.Unmarshal(data, &phone); err != nil {
-		logrus.Warnf("Err unmarshal json - %s", err)
+		logrus.Warnf("Err unmarshal data to struct phone - %s", err)
 		return ""
 	}
 	return phone.Phone
 }
 
-func Request(url string) (io.ReadCloser, error) {
-	resp, err := http.Get(url)
+func RequestFromParce(urlFromParce string, token string) (io.ReadCloser, error) {
+	proxyUrl, err := url.Parse(FindProxy(token))
 	if err != nil {
-		logrus.Fatalf("Err request to %s - %s", url, err)
+		logrus.Errorf("Err parce proxy url - %s", err)
+	}
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(proxyUrl),
+		},
+	}
+
+	resp, err := client.Get(urlFromParce)
+	if err != nil {
+		logrus.Fatalf("Err request to %s - %s", urlFromParce, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -170,4 +200,35 @@ func Request(url string) (io.ReadCloser, error) {
 
 	fmt.Println(resp.StatusCode)
 	return resp.Body, nil
+}
+
+func FindProxy(token string) string {
+	var p ProxyData
+	url := "http://localhost:80/api/v1/get?total=1"
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		logrus.Errorf("Err generate request from finding proxy - %s", err)
+		return ""
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Errorf("Err request to proxy service - %s", err)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logrus.Errorf("Err read body - %s", err)
+		return ""
+	}
+	if err := gojson.Unmarshal(body, &p); err != nil {
+		logrus.Errorf("Err unmarshal data to struct - %s", err)
+		return ""
+	}
+	return fmt.Sprintf("http://%s:%s", p.Data.IP, p.Data.Port)
 }
