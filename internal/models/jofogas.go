@@ -100,7 +100,6 @@ func FindProduct(url string, category string) error {
 				AppendData(&Sport, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
 			}
 		})
-
 		c.Visit(val)
 	})
 	return nil
@@ -170,7 +169,7 @@ func FindPhone(id string, proxy string) string {
 	}
 
 	if err = gojson.Unmarshal(data, &phone); err != nil {
-		logrus.Warnf("Err unmarshal data to struct phone - %s", err)
+		logrus.Errorf("Err unmarshal data to struct phone - %s", err)
 		return ""
 	}
 	return phone.Phone
