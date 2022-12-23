@@ -186,12 +186,14 @@ func RequestFromParce(urlFromParce string, token string) (io.ReadCloser, error) 
 
 	resp, err := client.Get(urlFromParce)
 	if err != nil {
-		logrus.Fatalf("Err request to %s - %s", urlFromParce, err)
+		logrus.Errorf("Err request to %s - %s", urlFromParce, err)
+		RequestFromParce(urlFromParce, token)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		logrus.Errorf("Err responce - %d %s", resp.StatusCode, resp.Status)
 		time.Sleep(time.Second * 5)
+		RequestFromParce(urlFromParce, token)
 	}
 
 	fmt.Println(resp.StatusCode)

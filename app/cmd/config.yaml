@@ -1,0 +1,10 @@
+# Для будущей конфигурации сервиса
+
+# Ссылки на категории
+# JWT token
+# Адрес целевого сервиса хранилища
+
+config:
+  jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDI2MDc0Mzh9.wn2UqalY-5xJDOPqdPKjHe1hxlCB9fap0LpxIKfxaUA" 
+  out_storage_addr: "http://storage-service.in.net.ex:8080/api/v1/"
+  out_proxy_addr: "http://proxy-service.in.net.ex:80/api/v1/get?total=1"
