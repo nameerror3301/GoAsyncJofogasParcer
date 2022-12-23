@@ -23,7 +23,6 @@
 │   ├── config
 │   │   ├── config.go
 │   │   └── config.yaml
-│   ├── logs
 │   └── models
 │       └── jofogas.go
 └── Readme.md
