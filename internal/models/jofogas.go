@@ -4,7 +4,6 @@ import (
 	"GoAsyncJofogasParcer/internal/config"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -221,7 +220,7 @@ func FindProxy(token string) string {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logrus.Errorf("Err read body - %s", err)
 		return ""
