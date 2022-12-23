@@ -133,9 +133,7 @@ func AppendData(data *[]RequesLast, phone string, respData ...string) {
 }
 
 func FindPhone(id string, proxy string) string {
-	var phone PhoneNum
-
-	urlPhone := fmt.Sprintf("https://apiv2.jofogas.hu/v2/items/getPhone?list_id=%s", id)
+	var p PhoneNum
 
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
@@ -148,7 +146,7 @@ func FindPhone(id string, proxy string) string {
 		},
 	}
 
-	req, err := http.NewRequest(http.MethodGet, urlPhone, nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://apiv2.jofogas.hu/v2/items/getPhone?list_id=%s", id), nil)
 	if err != nil {
 		logrus.Errorf("Err generate request from phone - %s", err)
 		return ""
@@ -168,11 +166,11 @@ func FindPhone(id string, proxy string) string {
 		return ""
 	}
 
-	if err = gojson.Unmarshal(data, &phone); err != nil {
+	if err = gojson.Unmarshal(data, &p); err != nil {
 		logrus.Errorf("Err unmarshal data to struct phone - %s", err)
 		return ""
 	}
-	return phone.Phone
+	return p.Phone
 }
 
 func RequestFromParce(urlFromParce string, token string) (io.ReadCloser, error) {
@@ -203,10 +201,9 @@ func RequestFromParce(urlFromParce string, token string) (io.ReadCloser, error) 
 func FindProxy(token string) string {
 	conf := config.ReadConfig()
 	var p ProxyData
-	url := conf.Data.OutProxyAddr
 
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(http.MethodGet, conf.Data.OutProxyAddr, nil)
 	if err != nil {
 		logrus.Errorf("Err generate request from finding proxy - %s", err)
 		return ""
