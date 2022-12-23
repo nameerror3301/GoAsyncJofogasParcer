@@ -201,8 +201,9 @@ func RequestFromParce(urlFromParce string, token string) (io.ReadCloser, error) 
 }
 
 func FindProxy(token string) string {
+	conf := config.ReadConfig()
 	var p ProxyData
-	url := "http://localhost:80/api/v1/get?total=1"
+	url := conf.Data.OutProxyAddr
 
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, url, nil)

@@ -11,6 +11,7 @@ type Config struct {
 	Data struct {
 		JwtToken       string `yaml:"jwt_token"`
 		OutStorageAddr string `yaml:"out_storage_addr"`
+		OutProxyAddr   string `yaml:"out_proxy_addr"`
 	} `yaml:"config"`
 }
 
