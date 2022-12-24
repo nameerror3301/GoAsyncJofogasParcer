@@ -92,6 +92,7 @@ func Run() {
 	/*
 		Отправка данных в другой микросервис
 	*/
+	fmt.Println(string(MarshalData(models.Elec)))
 	SendData(MarshalData(models.Elec), QueryElectronic, conf.Data.JwtToken)
 
 	SendData(MarshalData(models.Сlothing), QueryСlothing, conf.Data.JwtToken)

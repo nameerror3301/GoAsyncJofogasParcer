@@ -16,7 +16,7 @@ func init() {
 
 func main() {
 	for {
-		timer1 := time.NewTimer(30 * time.Second)
+		timer1 := time.NewTimer(2 * time.Second)
 		<-timer1.C
 		app.Run()
 	}
