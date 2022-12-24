@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -68,10 +67,6 @@ func FindProduct(url string, category string) error {
 		val, _ := s.Attr("href")
 		c := colly.NewCollector()
 
-		c.OnRequest(func(r *colly.Request) {
-			r.ProxyURL = FindProxy(conf.Data.JwtToken)
-		})
-
 		c.OnHTML("html", func(e *colly.HTMLElement) {
 			productID, _ := e.DOM.Find("vi-touch-stone[data-list-id]").Attr("data-list-id")
 			productName := e.DOM.Find("title").Text()
@@ -89,15 +84,15 @@ func FindProduct(url string, category string) error {
 
 			switch category {
 			case "Elec":
-				AppendData(&Elec, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Elec, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
 			case "Сlothing":
-				AppendData(&Сlothing, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Сlothing, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
 			case "Hobby":
-				AppendData(&Hobby, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Hobby, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
 			case "BabyMoM":
-				AppendData(&BabyMoM, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&BabyMoM, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
 			case "Sport":
-				AppendData(&Sport, FindPhone(productID, FindProxy(conf.Data.JwtToken)), productName, photoUrl, price, description, datePublicate, val)
+				AppendData(&Sport, FindPhone(productID), productName, photoUrl, price, description, datePublicate, val)
 			}
 		})
 		c.Visit(val)
@@ -132,19 +127,10 @@ func AppendData(data *[]RequesLast, phone string, respData ...string) {
 	})
 }
 
-func FindPhone(id string, proxy string) string {
+func FindPhone(id string) string {
 	var p PhoneNum
 
-	proxyUrl, err := url.Parse(proxy)
-	if err != nil {
-		logrus.Errorf("Err parce proxy url - %s", err)
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyUrl),
-		},
-	}
+	client := &http.Client{}
 
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://apiv2.jofogas.hu/v2/items/getPhone?list_id=%s", id), nil)
 	if err != nil {
@@ -174,59 +160,16 @@ func FindPhone(id string, proxy string) string {
 }
 
 func RequestFromParce(urlFromParce string, token string) (io.ReadCloser, error) {
-	proxyUrl, err := url.Parse(FindProxy(token))
-	if err != nil {
-		logrus.Errorf("Err parce proxy url - %s", err)
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyUrl),
-		},
-	}
-
-	resp, err := client.Get(urlFromParce)
+	resp, err := http.Get(urlFromParce)
 	if err != nil {
 		logrus.Errorf("Err request to %s - %s", urlFromParce, err)
-		RequestFromParce(urlFromParce, token)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		logrus.Errorf("Err responce - %d %s", resp.StatusCode, resp.Status)
 		time.Sleep(time.Second * 5)
-		RequestFromParce(urlFromParce, token)
 	}
 
 	fmt.Println(resp.StatusCode)
 	return resp.Body, nil
-}
-
-func FindProxy(token string) string {
-	conf := config.ReadConfig()
-	var p ProxyData
-
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, conf.Data.OutProxyAddr, nil)
-	if err != nil {
-		logrus.Errorf("Err generate request from finding proxy - %s", err)
-		return ""
-	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		logrus.Errorf("Err request to proxy service - %s", err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logrus.Errorf("Err read body - %s", err)
-		return ""
-	}
-	if err := gojson.Unmarshal(body, &p); err != nil {
-		logrus.Errorf("Err unmarshal data to struct - %s", err)
-		return ""
-	}
-	return fmt.Sprintf("http://%s:%s", p.Data.IP, p.Data.Port)
 }
